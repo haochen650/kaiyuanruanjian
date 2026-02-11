@@ -64,4 +64,8 @@ python -m codeinsight.cli ./src --directory
 
 # 3. 生成JSON报告
 python -m codeinsight.cli ./src --directory --json metrics.json
+
+# 4. 修复未使用引入
+python -m codeinsight.cli test_fix.py --fix
 ```
+
