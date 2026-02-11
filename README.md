@@ -20,6 +20,13 @@
 - 检测**缺少文档字符串**的函数
 - 统计**未使用导入**
 
+### 🔍 代码重复检测
+- **代码块重复检测** - 识别完全重复或相似的代码块
+- **函数重复检测** - 检测重复或相似的函数
+- **重复率统计** - 计算代码重复比例
+- **智能去重** - 支持忽略注释和空白字符
+- **相似度分析** - 基于哈希和序列匹配算法
+
 ### 📁 项目级分析
 - 递归扫描整个项目的Python文件
 - 生成**项目汇总报告**
@@ -59,6 +66,12 @@ python -m codeinsight.cli file.py
 # 显示函数级详细分析
 python -m codeinsight.cli file.py --show-functions
 
+# 检测代码重复（代码块模式）
+python -m codeinsight.cli file.py --detect-duplicates
+
+# 检测代码重复（函数模式）
+python -m codeinsight.cli file.py --detect-duplicates --duplicate-mode function
+
 # 分析整个项目
 python -m codeinsight.cli ./src --directory
 
@@ -83,6 +96,8 @@ python -m codeinsight.cli <path> [options]
 |------|------|
 | `--show-functions` | 显示函数级详细分析 |
 | `--show-cst` | 显示简化的语法树 |
+| `--detect-duplicates` | 检测代码重复 |
+| `--duplicate-mode` | 重复检测模式：block(代码块) 或 function(函数) |
 | `--directory` | 分析目录下的所有Python文件 |
 | `--recursive` | 递归分析子目录（默认true） |
 | `--json <file>` | 导出为JSON格式 |
@@ -106,6 +121,25 @@ python -m codeinsight.cli <path> [options]
 - **嵌套深度** - 最大嵌套层级，建议值 < 4
 - **类型注解覆盖率** - 有完整注解的函数占比，建议值 > 80%
 - **代码密度** - 有效代码行数占比，建议值 80%-95%
+- **代码重复率** - 重复代码占总代码的比例，建议值 < 10%
+
+### 代码重复检测
+
+代码重复检测功能提供两种模式：
+
+| 模式 | 说明 | 适用场景 |
+|------|------|----------|
+| `block` | 检测代码块级别的重复 | 发现任意代码段的重复 |
+| `function` | 检测函数级别的重复 | 识别重复或相似的函数 |
+
+**重复类型：**
+- 🔴 **完全重复** - 代码完全相同（相似度 100%）
+- 🟡 **相似重复** - 代码结构相似（相似度 ≥ 85%）
+
+**建议：**
+- 重复率 > 10%：需要重构，提取公共代码
+- 重复率 5-10%：可考虑优化
+- 重复率 < 5%：代码质量良好
 
 ---
 
@@ -162,13 +196,14 @@ def calculate(a: int, b: int) -> int:
 
 ```python
 from codeinsight.analyzer import CodeMetrics
+from codeinsight.code_detector import CodeDuplicateDetector, ASTBasedDuplicateDetector
 import libcst as cst
 
 # 读取文件
 with open('file.py', 'r') as f:
     source = f.read()
 
-# 分析
+# 分析代码质量
 tree = cst.parse_module(source)
 metrics = CodeMetrics()
 result = metrics.analyze(tree, source)
@@ -177,6 +212,16 @@ result = metrics.analyze(tree, source)
 print(f"Quality Score: {result['quality_score']}")
 for func in result['functions']:
     print(f"{func.name}: {func.lines_count} lines")
+
+# 检测代码重复（代码块模式）
+detector = CodeDuplicateDetector(min_block_size=5, similarity_threshold=0.85)
+report = detector.detect(source)
+print(f"Duplicate Rate: {report.duplicate_percentage:.1f}%")
+
+# 检测代码重复（函数模式）
+ast_detector = ASTBasedDuplicateDetector(min_function_size=5)
+report = ast_detector.detect(tree, source)
+print(f"Duplicate Functions: {report.exact_duplicates}")
 ```
 
 ---
@@ -188,6 +233,7 @@ codeinsight/
 ├── codeinsight/
 │   ├── analyzer.py              # 核心分析引擎
 │   ├── cli.py                   # 命令行接口
+│   ├── code_detector.py         # 代码重复检测
 │   ├── multi_file_analyzer.py   # 多文件分析
 │   ├── refactor.py              # 未使用引入修复
 │   └── cst_printer.py           # 工具函数
@@ -195,7 +241,8 @@ codeinsight/
 │   └── sample.py                # 示例代码
 ├── tests/
 │   ├── test_fix.py              # 修复测试
-│   └── test_analyzer.py         # 单元测试
+│   ├── test_analyzer.py         # 单元测试
+│   └── test_code_detector.py    # 重复检测测试
 ├── README.md                    # 使用文档
 ├── QUICK_REFERENCE.md          # 快速参考
 ├── FEATURE_EXPANSION.md        # 功能详细说明
@@ -216,6 +263,4 @@ codeinsight/
 MIT License
 
 ---
-
-**最后更新：** 2026-02-05
 
