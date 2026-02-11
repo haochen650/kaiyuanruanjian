@@ -136,3 +136,6 @@ def main():
 
 # _analyze_directory 函数也按此逻辑保留...
 # TODO: Add explicit error handling for file not found exceptions
+if __name__ == "__main__":
+    print("Starting CodeInsight module directly...")
+    # 这里可以调用你的主函数，例如: main()
