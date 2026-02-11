@@ -135,3 +135,4 @@ def main():
         print(f"\n✅ 报告已导出到: {args.json}")
 
 # _analyze_directory 函数也按此逻辑保留...
+# TODO: Add explicit error handling for file not found exceptions
