@@ -9,6 +9,8 @@ from .analyzer import CodeMetrics
 from .cst_printer import print_cst_tree
 from .multi_file_analyzer import MultiFileAnalyzer, ReportExporter
 from .code_detector import CodeDuplicateDetector, ASTBasedDuplicateDetector, format_duplicate_report
+from .evolution import EvolutionAnalyzer
+from .checker import check_logic_bugs
 
 def main():
     parser = argparse.ArgumentParser(description="CodeInsight: 多维度 Python 代码质量分析工具")
@@ -21,6 +23,8 @@ def main():
     parser.add_argument("--directory", "-d", action="store_true", help="分析目录下的所有Python文件")
     parser.add_argument("--json", "-j", metavar="OUTPUT_FILE", help="导出为JSON格式")
     parser.add_argument("--recursive", "-r", action="store_true", default=True, help="递归分析子目录")
+    parser.add_argument("--evolution", action="store_true", help="分析文件的历史演化趋势")
+    parser.add_argument("--check-bugs", action="store_true", help="执行深度逻辑 Bug 扫描")
     args = parser.parse_args()
 
     filepath = Path(args.file)
@@ -43,6 +47,21 @@ def main():
     except Exception as e:
         print(f"解析失败: {e}", file=sys.stderr)
         sys.exit(1)
+
+    if args.check_bugs:
+        bug_findings = check_logic_bugs(tree)
+        print("\n🐛 深度 Bug 扫描结果:")
+        if not bug_findings:
+            print("  ✅ 未发现常见逻辑缺陷")
+        for bug in bug_findings:
+            print(f"  {bug}")
+
+    if args.evolution:
+        print("\n⏳ 历史演化轨迹 (过去10个版本):")
+        ea = EvolutionAnalyzer(".")
+        history = ea.analyze_history(str(filepath))
+        for entry in history:
+            print(f"  [{entry['date']}] {entry['commit']} | 评分: {entry['score']} | 复杂度: {entry['complexity']}")
 
     # --- 1. 执行分析指标 ---
     metrics = CodeMetrics()
