@@ -1,9 +1,9 @@
 # CodeInsight 项目完成总结
 
 **项目名称：** CodeInsight - Python 代码质量分析工具
-**版本：** 2.0
-**完成日期：** 2026-02-05
-**状态：** ✅ 完成
+**版本：** 2.1
+**完成日期：** 2026-02-11
+**状态：** ✅ 完成 (核心分析 + 自动修复)
 
 ---
 
@@ -32,6 +32,10 @@ codeinsight/
 │
 ├── cst_printer.py
 │   - 语法树打印工具
+│ 
+├── refactor.py (新增 ✨)
+│   - 基于 LibCST Transformer 的自动修复引擎
+│   - 精准移除未使用导入，支持别名对齐与逗号清理
 │
 └── __init__.py
     - 包初始化
@@ -44,7 +48,8 @@ examples/
 ├── sample.py              # 示例代码用于测试
 
 tests/
-├── test_analyzer.py       # 单元测试
+├── test_analyzer.py      # 单元测试
+├── test_fix.py           # 修改测试
 ```
 
 ### 文档文件 (5 个 markdown)
@@ -129,6 +134,10 @@ requirements.txt           # 依赖配置 (libcst>=0.4.0)
 - ✅ 项目级导出
 - ✅ 完整的数据结构
 
+### 6.自动化代码修复 (v2.1 重磅更新)
+- ✅ 一键清理：支持通过 --fix 自动移除代码中未使用的导入语句。
+- ✅ 智能识别：精准匹配 import pandas as pd 等别名场景。
+- ✅ 格式保护：利用 LibCST 具体语法树，修复后完美保留原有注释与空行。
 ---
 
 ## 🔧 问题修复
@@ -145,13 +154,20 @@ requirements.txt           # 依赖配置 (libcst>=0.4.0)
 **问题：** `IndentedBlock` 没有 `leading_lines` 属性
 **解决：** 简化处理，使用默认行号
 
+### 修复 4：重构后的语法验证错误
+**问题：** `移除所有导入项后留下空的 import 关键字。 
+**解决：** 在 leave_Import 级进行判断，若无保留项则返回 RemoveFromParent() 彻底移除整行。
+
+### 修复 5：多名导入的逗号残留
+**问题：** ` from x import a, b 移除 b 后 a 后面带有孤立逗号。 
+**解决：** 实现 _fix_commas 辅助函数，动态调整末尾节点的 comma 属性。
 ---
 
 ## 📊 代码统计
 
 | 项目 | 数值 |
 |------|------|
-| 核心代码行数 | ~580 行 |
+| 核心代码行数 | ~650 行 |
 | 文档文件数 | 5 个 markdown |
 | 测试用例数 | 1 个文件 |
 | 依赖库数 | 1 个 (libcst) |
@@ -168,10 +184,12 @@ codeinsight/ (项目根目录)
 │   ├── analyzer.py              ✅ 已优化
 │   ├── cli.py                   ✅ 已优化
 │   ├── multi_file_analyzer.py   ✅ 新增
+│   ├── factor.py   ✅ 新增
 │   └── cst_printer.py
 ├── 📂 examples/
 │   └── sample.py
 ├── 📂 tests/
+│   ├── test_fix.py         ✅ 新增  
 │   └── test_analyzer.py
 │
 ├── README.md                    ✅ 已编写
@@ -219,6 +237,7 @@ codeinsight/ (项目根目录)
 - ✅ JSON 导出功能实现
 - ✅ 所有文档已完成
 - ✅ 临时文件已清理
+- ✅ --fix 功能在 import、import as、from import 三种场景下验证通过。
 
 ---
 
@@ -259,7 +278,7 @@ python -m codeinsight.cli ./src --directory --json metrics.json
 
 ## 🎉 项目完成说明
 
-**CodeInsight 2.0 项目已完成所有计划功能：**
+**CodeInsight 2.1 项目已完成所有计划功能：**
 
 1. ✅ 修复了导入检查逻辑
 2. ✅ 实现了代码质量评分
@@ -269,6 +288,7 @@ python -m codeinsight.cli ./src --directory --json metrics.json
 6. ✅ 支持 JSON 导出
 7. ✅ 完成了使用文档
 8. ✅ 清理了临时文件
+9. ✅ --fix 功能在 import、import as、from import 三种场景下验证通过。
 
 **项目可以投入使用！**
 
@@ -285,9 +305,10 @@ python -m codeinsight.cli ./src --directory --json metrics.json
 
 ---
 
-**项目完成时间：** 2026-02-05
+**项目完成时间：** 2026-02-11
 **最后验证：** 所有功能正常
 **文档状态：** 完整
 **代码状态：** 可用
 
 🚀 **Ready to use!**
+
