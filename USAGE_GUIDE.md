@@ -28,6 +28,12 @@ python -m codeinsight.cli ./src --directory
 python -m codeinsight.cli ./src --directory --json report.json
 ```
 
+### 修复单个文件
+
+```bash
+python -m codeinsight.cli test_fix.py --fix
+```
+
 ---
 
 ## 常用场景
@@ -156,3 +162,4 @@ python -m codeinsight.cli file.py
 ---
 
 **更多信息查看 README.md 和 QUICK_REFERENCE.md**
+
