@@ -8,6 +8,7 @@ from codeinsight.refactor import UnusedImportRemover  # 确保你已经创建了
 from .analyzer import CodeMetrics
 from .cst_printer import print_cst_tree
 from .multi_file_analyzer import MultiFileAnalyzer, ReportExporter
+from .code_detector import CodeDuplicateDetector, ASTBasedDuplicateDetector, format_duplicate_report
 
 def main():
     parser = argparse.ArgumentParser(description="CodeInsight: 多维度 Python 代码质量分析工具")
@@ -15,6 +16,8 @@ def main():
     parser.add_argument("--fix", action="store_true", help="自动修复可安全修复的问题（目前支持：移除未使用导入）")
     parser.add_argument("--show-cst", action="store_true", help="显示简化语法树")
     parser.add_argument("--show-functions", action="store_true", help="显示详细的函数分析")
+    parser.add_argument("--detect-duplicates", action="store_true", help="检测代码重复")
+    parser.add_argument("--duplicate-mode", choices=["block", "function"], default="block", help="重复检测模式: block(代码块) 或 function(函数)")
     parser.add_argument("--directory", "-d", action="store_true", help="分析目录下的所有Python文件")
     parser.add_argument("--json", "-j", metavar="OUTPUT_FILE", help="导出为JSON格式")
     parser.add_argument("--recursive", "-r", action="store_true", default=True, help="递归分析子目录")
@@ -45,7 +48,7 @@ def main():
     metrics = CodeMetrics()
     result = metrics.analyze(tree, source)
 
-    # --- 2. 自动化修复逻辑 (新增) ---
+    # --- 2. 自动化修复逻辑 ---
     if args.fix and result['unused_imports']:
         print(f"\n🛠️  正在执行自动修复: {filepath.name}")
         
@@ -168,6 +171,22 @@ def main():
         print("\n🌳 简化语法树 (前3层):")
         print_cst_tree(tree, max_depth=3)
 
+    # 代码重复检测
+    if args.detect_duplicates:
+        print("\n" + "=" * 50)
+        if args.duplicate_mode == "block":
+            detector = CodeDuplicateDetector(
+                min_block_size=5,
+                similarity_threshold=0.85,
+                ignore_comments=True,
+                ignore_whitespace=True
+            )
+            report = detector.detect(source)
+        else:
+            detector = ASTBasedDuplicateDetector(min_function_size=5)
+            report = detector.detect(tree, source)
+        print(format_duplicate_report(report))
+
     # JSON导出
     if args.json:
         ReportExporter.export_json(result, args.json)
@@ -179,7 +198,7 @@ def _analyze_directory(directory: Path, args):
     analyzer = MultiFileAnalyzer()
     
     # 如果开启了 --fix，我们需要在扫描目录时对每个文件进行处理
-    # 注意：为了简单起见，这里假设 MultiFileAnalyzer 尚未集成修复功能
+    #为了简单起见，这里假设 MultiFileAnalyzer 尚未集成修复功能
     # 如果要在目录扫描中也支持 --fix，建议在 MultiFileAnalyzer.analyze_directory 中实现逻辑
     result = analyzer.analyze_directory(str(directory), recursive=args.recursive)
 
