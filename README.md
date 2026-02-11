@@ -232,8 +232,10 @@ print(f"Duplicate Functions: {report.exact_duplicates}")
 codeinsight/
 ├── codeinsight/
 │   ├── analyzer.py              # 核心分析引擎
+|   |—— checker.py               # 逻辑风险检查模块
 │   ├── cli.py                   # 命令行接口
 │   ├── code_detector.py         # 代码重复检测
+|   |—— evolution.py             # 演化分析模块
 │   ├── multi_file_analyzer.py   # 多文件分析
 │   ├── refactor.py              # 未使用引入修复
 │   └── cst_printer.py           # 工具函数
@@ -263,4 +265,5 @@ codeinsight/
 MIT License
 
 ---
+
 
