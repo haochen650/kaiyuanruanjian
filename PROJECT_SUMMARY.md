@@ -4,7 +4,7 @@
 
 **CodeInsight** 是一个完整的 Python 代码质量分析工具
 
-**版本：** 2.0 | **更新：** 2026-02-05 | **Python：** 3.10+
+**版本：** 2.1 | **更新：** 2026-02-11 | **Python：** 3.10+
 
 ---
 
@@ -38,10 +38,13 @@ codeinsight/
 ├── codeinsight/
 │   ├── analyzer.py              # 分析引擎
 │   ├── cli.py                   # 命令行接口
+│   ├── refactor.py
 │   ├── multi_file_analyzer.py   # 多文件分析
 │   └── ...
 ├── examples/sample.py
-├── tests/test_analyzer.py
+├── tests
+│   ├── test_fix.py
+│   └── test_analyzer.py
 ├── README.md                    # 主文档
 ├── INSTALLATION.md              # 安装指南
 ├── USAGE_GUIDE.md              # 使用指南
@@ -63,6 +66,9 @@ python -m codeinsight.cli file.py --show-functions
 
 # 分析项目
 python -m codeinsight.cli ./src --directory --json report.json
+
+# 修复
+python -m codeinsight.cli test_fix.py --fix
 ```
 
 ---
@@ -116,3 +122,4 @@ MIT License
 **开始使用：** 查看 README.md
 
 **有问题？** 查看 INSTALLATION.md
+
