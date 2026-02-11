@@ -2,6 +2,7 @@ import unittest
 import libcst as cst
 from codeinsight.analyzer import CodeMetrics
 
+
 class TestAnalyzer(unittest.TestCase):
     def test_simple_function(self):
         code = "def f(): pass"
@@ -17,6 +18,7 @@ class TestAnalyzer(unittest.TestCase):
         metrics = CodeMetrics()
         result = metrics.analyze(tree)
         self.assertEqual(result["cyclomatic_complexity"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

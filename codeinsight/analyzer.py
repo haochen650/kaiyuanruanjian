@@ -6,6 +6,7 @@ from dataclasses import dataclass, field, asdict
 @dataclass
 class FunctionMetrics:
     """单个函数的指标"""
+
     name: str
     line_start: int
     line_end: int
@@ -35,6 +36,7 @@ class FunctionMetrics:
 @dataclass
 class ClassMetrics:
     """单个类的指标"""
+
     name: str
     line_start: int
     line_end: int
@@ -74,13 +76,17 @@ class CodeMetrics:
 
         # 计算代码统计
         if source:
-            lines = source.split('\n')
+            lines = source.split("\n")
             self.line_count = len(lines)
-            self.comment_count = sum(1 for line in lines if line.strip().startswith('#'))
+            self.comment_count = sum(
+                1 for line in lines if line.strip().startswith("#")
+            )
 
         # 计算类型注解覆盖率
         if self.total_functions > 0:
-            annotation_coverage = (self.annotated_functions / self.total_functions) * 100
+            annotation_coverage = (
+                self.annotated_functions / self.total_functions
+            ) * 100
         else:
             annotation_coverage = 0
 
@@ -106,7 +112,9 @@ class CodeMetrics:
             "classes": self.classes_list,
         }
 
-    def _calculate_score(self, unused_imports: List[str], annotation_coverage: float) -> int:
+    def _calculate_score(
+        self, unused_imports: List[str], annotation_coverage: float
+    ) -> int:
         """计算代码质量评分 (0-100)"""
         score = 100
 
@@ -194,7 +202,9 @@ class MetricsVisitor(cst.CSTVisitor):
 
         # 只有当同时有返回类型和所有参数都有类型注解时，才认为这个函数是有注解的
         has_params = len([p for p in params if p.name.value != "self"]) > 0
-        is_annotated = has_return_annotation and (missing_params == 0 if has_params else True)
+        is_annotated = has_return_annotation and (
+            missing_params == 0 if has_params else True
+        )
         if is_annotated:
             self.metrics.annotated_functions += 1
 
@@ -291,7 +301,9 @@ class MetricsVisitor(cst.CSTVisitor):
         first_stmt = body.body[0]
         if isinstance(first_stmt, cst.SimpleStatementLine):
             if first_stmt.body and isinstance(first_stmt.body[0], cst.Expr):
-                if isinstance(first_stmt.body[0].value, (cst.SimpleString, cst.ConcatenatedString)):
+                if isinstance(
+                    first_stmt.body[0].value, (cst.SimpleString, cst.ConcatenatedString)
+                ):
                     return True
         return False
 

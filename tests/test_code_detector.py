@@ -6,7 +6,7 @@ from codeinsight.code_detector import (
     format_duplicate_report,
     CodeBlock,
     DuplicatePair,
-    DuplicateReport
+    DuplicateReport,
 )
 
 
@@ -234,7 +234,9 @@ class TestDuplicatePair(unittest.TestCase):
     def test_similar_duplicate_type(self):
         """测试相似重复类型"""
         block1 = CodeBlock(start_line=1, end_line=5, content="test1", hash_value="abc")
-        block2 = CodeBlock(start_line=10, end_line=14, content="test2", hash_value="def")
+        block2 = CodeBlock(
+            start_line=10, end_line=14, content="test2", hash_value="def"
+        )
         pair = DuplicatePair(block1, block2, 0.9, "similar")
 
         self.assertEqual(pair.type, "similar")
@@ -253,7 +255,7 @@ class TestDuplicateReport(unittest.TestCase):
             duplicate_pairs=[],
             duplicate_lines=20,
             total_lines=100,
-            duplicate_percentage=20.0
+            duplicate_percentage=20.0,
         )
 
         self.assertEqual(report.duplicate_percentage, 20.0)
@@ -267,7 +269,7 @@ class TestDuplicateReport(unittest.TestCase):
             duplicate_pairs=[],
             duplicate_lines=20,
             total_lines=100,
-            duplicate_percentage=20.0
+            duplicate_percentage=20.0,
         )
 
         self.assertEqual(report.total_blocks, 10)
@@ -285,7 +287,7 @@ class TestFormatDuplicateReport(unittest.TestCase):
             duplicate_pairs=[],
             duplicate_lines=0,
             total_lines=100,
-            duplicate_percentage=0.0
+            duplicate_percentage=0.0,
         )
 
         formatted = format_duplicate_report(report)
@@ -305,7 +307,7 @@ class TestFormatDuplicateReport(unittest.TestCase):
             duplicate_pairs=[pair],
             duplicate_lines=5,
             total_lines=100,
-            duplicate_percentage=5.0
+            duplicate_percentage=5.0,
         )
 
         formatted = format_duplicate_report(report)
@@ -321,7 +323,7 @@ class TestFormatDuplicateReport(unittest.TestCase):
             duplicate_pairs=[],
             duplicate_lines=50,
             total_lines=100,
-            duplicate_percentage=50.0
+            duplicate_percentage=50.0,
         )
 
         formatted = format_duplicate_report(report)

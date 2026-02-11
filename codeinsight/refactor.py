@@ -2,6 +2,7 @@
 import libcst as cst
 from typing import Union
 
+
 class UnusedImportRemover(cst.CSTTransformer):
     def __init__(self, unused_imports: set):
         # 确保传入的是集合，并去掉两端空格
@@ -21,29 +22,33 @@ class UnusedImportRemover(cst.CSTTransformer):
         else:
             # 2. 如果没有别名，检查原始包名
             name_to_check = alias.name.value
-            
+
         return name_to_check in self.unused_imports
 
-    def leave_Import(self, original_node: cst.Import, updated_node: cst.Import) -> Union[cst.Import, cst.RemovalSentinel]:
+    def leave_Import(
+        self, original_node: cst.Import, updated_node: cst.Import
+    ) -> Union[cst.Import, cst.RemovalSentinel]:
         # 过滤掉所有被判定为“未使用”的子节点
         new_names = [n for n in updated_node.names if not self._should_remove(n)]
-        
+
         # 如果这一行一个名字都不剩了，删除整行
         if not new_names:
             return cst.RemoveFromParent()
-        
+
         # 重新整理逗号（确保最后一个元素后面没有逗号）
         return updated_node.with_changes(names=self._clean_commas(new_names))
 
-    def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> Union[cst.ImportFrom, cst.RemovalSentinel]:
+    def leave_ImportFrom(
+        self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
+    ) -> Union[cst.ImportFrom, cst.RemovalSentinel]:
         if isinstance(updated_node.names, cst.ImportStar):
             return updated_node
-            
+
         new_names = [n for n in updated_node.names if not self._should_remove(n)]
-        
+
         if not new_names:
             return cst.RemoveFromParent()
-            
+
         return updated_node.with_changes(names=self._clean_commas(new_names))
 
     def _clean_commas(self, names_list):

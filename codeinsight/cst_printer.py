@@ -1,7 +1,9 @@
 import libcst as cst
 
+
 def print_cst_tree(module: cst.Module, max_depth: int = 3):
     """简化打印 CST 结构，避免过深"""
+
     def _print_node(node, depth=0):
         if depth > max_depth:
             return
@@ -18,4 +20,5 @@ def print_cst_tree(module: cst.Module, max_depth: int = 3):
                         _print_node(item, depth + 1)
             elif isinstance(value, cst.CSTNode):
                 _print_node(value, depth + 1)
+
     _print_node(module)

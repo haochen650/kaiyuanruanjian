@@ -13,7 +13,9 @@ class MultiFileAnalyzer:
     def __init__(self):
         self.results: Dict[str, Dict[str, Any]] = {}
 
-    def analyze_directory(self, directory: str, recursive: bool = True) -> Dict[str, Any]:
+    def analyze_directory(
+        self, directory: str, recursive: bool = True
+    ) -> Dict[str, Any]:
         """分析目录下的所有Python文件
 
         Args:
@@ -34,8 +36,17 @@ class MultiFileAnalyzer:
             py_files = list(dir_path.glob("*.py"))
 
         # 排除常见的非源代码文件夹
-        excluded_dirs = {".git", "__pycache__", ".venv", "venv", ".idea", "node_modules"}
-        py_files = [f for f in py_files if not any(part in f.parts for part in excluded_dirs)]
+        excluded_dirs = {
+            ".git",
+            "__pycache__",
+            ".venv",
+            "venv",
+            ".idea",
+            "node_modules",
+        }
+        py_files = [
+            f for f in py_files if not any(part in f.parts for part in excluded_dirs)
+        ]
 
         results = {}
         total_score = 0
@@ -43,7 +54,7 @@ class MultiFileAnalyzer:
 
         for py_file in sorted(py_files):
             try:
-                with open(py_file, 'r', encoding='utf-8') as f:
+                with open(py_file, "r", encoding="utf-8") as f:
                     source = f.read()
 
                 tree = cst.parse_module(source)
@@ -51,7 +62,7 @@ class MultiFileAnalyzer:
                 result = metrics.analyze(tree, source)
 
                 results[str(py_file)] = result
-                total_score += result['quality_score']
+                total_score += result["quality_score"]
                 file_count += 1
             except Exception as e:
                 results[str(py_file)] = {"error": str(e)}
@@ -85,11 +96,11 @@ class MultiFileAnalyzer:
             if "error" in result:
                 continue
 
-            score = result.get('quality_score', 0)
+            score = result.get("quality_score", 0)
             avg_score += score
-            total_functions += result.get('function_count', 0)
-            total_classes += result.get('class_count', 0)
-            total_lines += result.get('line_count', 0)
+            total_functions += result.get("function_count", 0)
+            total_classes += result.get("class_count", 0)
+            total_lines += result.get("line_count", 0)
 
             if score < worst_score:
                 worst_score = score
@@ -124,16 +135,17 @@ class ReportExporter:
         # 处理不可序列化的对象
         json_result = ReportExporter._make_serializable(result)
 
-        with open(output_file, 'w', encoding='utf-8') as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(json_result, f, ensure_ascii=False, indent=2)
 
     @staticmethod
     def _make_serializable(obj: Any) -> Any:
         """将对象转换为JSON可序列化的形式"""
-        if hasattr(obj, '__dataclass_fields__'):
+        if hasattr(obj, "__dataclass_fields__"):
             # 处理dataclass对象
-            return {k: ReportExporter._make_serializable(v)
-                    for k, v in obj.__dict__.items()}
+            return {
+                k: ReportExporter._make_serializable(v) for k, v in obj.__dict__.items()
+            }
         elif isinstance(obj, (list, tuple)):
             return [ReportExporter._make_serializable(item) for item in obj]
         elif isinstance(obj, dict):
