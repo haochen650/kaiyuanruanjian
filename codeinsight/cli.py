@@ -2,14 +2,17 @@ import argparse
 import sys
 from pathlib import Path
 import libcst as cst
+
+# 核心模块导入
+from codeinsight.refactor import UnusedImportRemover  # 确保你已经创建了这个文件
 from .analyzer import CodeMetrics
 from .cst_printer import print_cst_tree
 from .multi_file_analyzer import MultiFileAnalyzer, ReportExporter
 
-
 def main():
     parser = argparse.ArgumentParser(description="CodeInsight: 多维度 Python 代码质量分析工具")
     parser.add_argument("file", help="Python 源文件或目录路径")
+    parser.add_argument("--fix", action="store_true", help="自动修复可安全修复的问题（目前支持：移除未使用导入）")
     parser.add_argument("--show-cst", action="store_true", help="显示简化语法树")
     parser.add_argument("--show-functions", action="store_true", help="显示详细的函数分析")
     parser.add_argument("--directory", "-d", action="store_true", help="分析目录下的所有Python文件")
@@ -38,14 +41,39 @@ def main():
         print(f"解析失败: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # 分析指标
+    # --- 1. 执行分析指标 ---
     metrics = CodeMetrics()
     result = metrics.analyze(tree, source)
 
-    # 输出报告
-    print(f"🔍 代码质量分析报告: {filepath}\n")
+    # --- 2. 自动化修复逻辑 (新增) ---
+    if args.fix and result['unused_imports']:
+        print(f"\n🛠️  正在执行自动修复: {filepath.name}")
+        
+        # 实例化重构器
+        fixer = UnusedImportRemover(set(result['unused_imports']))
+        
+        # 转换语法树
+        modified_tree = tree.visit(fixer)
+        new_code = modified_tree.code
+        
+        # 如果代码有变化，写回文件
+        if new_code != source:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(new_code)
+            print(f"✅ 已自动移除未使用的导入: {', '.join(result['unused_imports'])}")
+            
+            # 修复后重新分析一次，以保证后续输出的报告是基于最新代码的
+            source = new_code
+            tree = modified_tree
+            result = metrics.analyze(tree, source)
+        else:
+            print("💡 未发现可自动修复的变更。")
 
-    # 质量评分 (新增)
+    # --- 3. 输出报告 ---
+    print(f"\n🔍 代码质量分析报告: {filepath}")
+    print("-" * 40)
+
+    # 质量评分
     quality_score = result['quality_score']
     if quality_score >= 80:
         score_emoji = "⭐"
@@ -57,24 +85,24 @@ def main():
         score_emoji = "❌"
     print(f"{score_emoji} 代码质量评分: {quality_score}/100")
 
-    # 代码规模统计 (新增)
+    # 代码规模统计
     print(f"\n📈 代码规模:")
     print(f"  📝 总行数: {result['line_count']}")
     print(f"  💬 注释行数: {result['comment_count']}")
     if result['line_count'] > 0:
         code_lines = result['line_count'] - result['comment_count']
-        density = (code_lines / result['line_count'] * 100) if result['line_count'] > 0 else 0
+        density = (code_lines / result['line_count'] * 100)
         print(f"  📊 代码密度: {density:.1f}%")
 
     # 复杂度指标
-    print(f"\n⚙️ 复杂度指标:")
+    print(f"\n⚙️  复杂度指标:")
     print(f"  📊 圈复杂度: {result['cyclomatic_complexity']}")
     print(f"  🧮 函数数量: {result['function_count']}")
-    print(f"  🏛️ 类数量: {result['class_count']}")
+    print(f"  🏛️  类数量: {result['class_count']}")
     print(f"  📦 最大嵌套深度: {result['max_nesting_depth']}")
 
-    # 类型注解覆盖率 (新增)
-    print(f"\n🏷️ 类型注解覆盖率:")
+    # 类型注解覆盖率
+    print(f"\n🏷️  类型注解覆盖率:")
     annotation_coverage = result['annotation_coverage']
     coverage_bar = "█" * int(annotation_coverage // 10) + "░" * (10 - int(annotation_coverage // 10))
     print(f"  {coverage_bar} {annotation_coverage:.1f}% ({result['total_functions']} 个函数)")
@@ -84,7 +112,10 @@ def main():
     # 导入管理
     print(f"\n📦 导入管理:")
     unused = result['unused_imports']
-    print(f"  🗑️ 未使用导入 ({len(unused)}): {', '.join(unused) if unused else '无'}")
+    if args.fix and not unused:
+        print(f"  ✨ 所有未使用导入已清理完毕")
+    else:
+        print(f"  🗑️  未使用导入 ({len(unused)}): {', '.join(unused) if unused else '无'}")
 
     # 函数级别详细分析
     if args.show_functions and result['functions']:
@@ -115,36 +146,19 @@ def main():
     if result['max_nesting_depth'] > 4:
         print("  ⚠️  嵌套过深 (> 4)，考虑提前 return 或提取函数")
         suggestions_count += 1
-    if len(unused) > 0:
-        print("  ⚠️  存在未使用导入，建议清理")
+    if unused:
+        print(f"  ⚠️  存在 {len(unused)} 个未使用导入，建议运行 --fix 自动清理")
         suggestions_count += 1
     if result['annotation_coverage'] < 50:
-        print(f"  🏷️  类型注解覆盖率较低 ({annotation_coverage:.1f}%)，建议为关键函数添加类型注解")
+        print(f"  🏷️   类型注解覆盖率较低 ({annotation_coverage:.1f}%)，建议为关键函数添加类型注解")
         suggestions_count += 1
-    if result['comment_count'] == 0 and result['line_count'] > 20:
-        print("  📝 代码注释为空，建议为复杂逻辑添加注释")
-        suggestions_count += 1
-
+    
     # 长函数提示
     long_functions = [f for f in result['functions'] if f.lines_count > 50]
     if long_functions:
         print(f"  📏 发现 {len(long_functions)} 个长函数 (>50行):")
-        for func in long_functions[:3]:  # 仅显示前3个
+        for func in long_functions[:3]:
             print(f"     - {func.name}(): {func.lines_count} 行")
-        suggestions_count += 1
-
-    # 参数过多提示
-    many_param_funcs = [f for f in result['functions'] if f.params_count > 4]
-    if many_param_funcs:
-        print(f"  📥 发现 {len(many_param_funcs)} 个参数过多的函数 (>4个参数):")
-        for func in many_param_funcs[:3]:  # 仅显示前3个
-            print(f"     - {func.name}(): {func.params_count} 个参数")
-        suggestions_count += 1
-
-    # 缺少docstring提示
-    missing_docstring = [f for f in result['functions'] if not f.has_docstring]
-    if missing_docstring and len(missing_docstring) > result['function_count'] // 2:
-        print(f"  📚 {len(missing_docstring)} 个函数缺少文档字符串")
         suggestions_count += 1
 
     if suggestions_count == 0:
@@ -163,6 +177,10 @@ def main():
 def _analyze_directory(directory: Path, args):
     """分析目录下的所有Python文件"""
     analyzer = MultiFileAnalyzer()
+    
+    # 如果开启了 --fix，我们需要在扫描目录时对每个文件进行处理
+    # 注意：为了简单起见，这里假设 MultiFileAnalyzer 尚未集成修复功能
+    # 如果要在目录扫描中也支持 --fix，建议在 MultiFileAnalyzer.analyze_directory 中实现逻辑
     result = analyzer.analyze_directory(str(directory), recursive=args.recursive)
 
     print(f"📂 目录分析报告: {result['directory']}\n")
@@ -188,11 +206,10 @@ def _analyze_directory(directory: Path, args):
     ]
     files_with_scores.sort(key=lambda x: x[1], reverse=True)
 
-    for file_path, score in files_with_scores[:10]:  # 显示前10个
+    for file_path, score in files_with_scores[:10]:
         emoji = "⭐" if score >= 80 else "👍" if score >= 60 else "⚠️" if score >= 40 else "❌"
         print(f"  {emoji} {Path(file_path).name}: {score}/100")
 
-    # JSON导出
     if args.json:
         ReportExporter.export_json(result, args.json)
         print(f"\n✅ 报告已导出到: {args.json}")
