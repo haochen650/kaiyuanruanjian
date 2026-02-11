@@ -25,6 +25,8 @@
 - 生成**项目汇总报告**
 - 按质量评分**排序所有文件**
 - 自动排除非源代码文件夹
+- 基于 LibCST Transformer 的自动修复引擎
+- 精准移除未使用导入，支持别名对齐与逗号清理
 
 ### 📄 报告导出
 - 导出为**JSON格式**
@@ -62,6 +64,9 @@ python -m codeinsight.cli ./src --directory
 
 # 导出为 JSON
 python -m codeinsight.cli ./src --directory --json report.json
+
+# 精准移除未使用导入
+python -m codeinsight.cli test_fix.py --fix
 ```
 
 ---
@@ -184,10 +189,12 @@ codeinsight/
 │   ├── analyzer.py              # 核心分析引擎
 │   ├── cli.py                   # 命令行接口
 │   ├── multi_file_analyzer.py   # 多文件分析
+│   ├── refactor.py              # 未使用引入修复
 │   └── cst_printer.py           # 工具函数
 ├── examples/
 │   └── sample.py                # 示例代码
 ├── tests/
+│   ├── test_fix.py              # 修复测试
 │   └── test_analyzer.py         # 单元测试
 ├── README.md                    # 使用文档
 ├── QUICK_REFERENCE.md          # 快速参考
@@ -211,3 +218,4 @@ MIT License
 ---
 
 **最后更新：** 2026-02-05
+
