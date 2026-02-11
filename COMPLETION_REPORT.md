@@ -184,7 +184,7 @@ codeinsight/ (项目根目录)
 │   ├── analyzer.py              ✅ 已优化
 │   ├── cli.py                   ✅ 已优化
 │   ├── multi_file_analyzer.py   ✅ 新增
-│   ├── factor.py   ✅ 新增
+│   ├── refactor.py   ✅ 新增
 │   └── cst_printer.py
 ├── 📂 examples/
 │   └── sample.py
@@ -311,4 +311,5 @@ python -m codeinsight.cli ./src --directory --json metrics.json
 **代码状态：** 可用
 
 🚀 **Ready to use!**
+
 
